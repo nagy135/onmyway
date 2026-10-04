@@ -159,6 +159,7 @@ button { transition: background .18s, color .18s, box-shadow .18s, transform .18
 .map-controls button:hover { background: #ebf0e1; }
 .control-divider { height: 1px; background: #e4e9dd; margin: 3px 5px; }
 .map-empty { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 2; max-width: 300px; width: calc(100% - 50px); background: #fffef9ef; backdrop-filter: blur(10px); border: 1px solid #e1e7d7; border-radius: 15px; text-align: center; padding: 22px; box-shadow: 0 4px 25px #2b452508; }
+.map-empty-dismiss { position: absolute; top: 4px; right: 4px; width: 44px; height: 44px; color: #819274; }
 .map-empty > span { display: inline-flex; padding: 12px; background: #eaf2dc; border-radius: 14px; color: #73955c; margin-bottom: 12px; }
 .map-empty strong { display: block; font-size: 15px; font-weight: 550; }
 .map-empty p { margin-top: 8px; font-size: 11px; line-height: 1.8; color: #8b9780; }

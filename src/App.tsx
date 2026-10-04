@@ -136,6 +136,10 @@ function ActiveMeeting({ session, connected, onSnapshot, selectedId, onSelect, n
   const [editName, setEditName] = useState(false);
   const [leaveDialog, setLeaveDialog] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [mapHintDismissed, setMapHintDismissed] = useState(() => {
+    try { return sessionStorage.getItem(`onmyway-map-hint-dismissed-${session.id}`) === '1'; }
+    catch { return false; }
+  });
   const self = session.participants.find((p) => p.id === session.viewerId)!;
   const others = session.participants.filter((p) => p.id !== session.viewerId);
   const selected = others.find((p) => p.id === selectedId);
@@ -148,7 +152,10 @@ function ActiveMeeting({ session, connected, onSnapshot, selectedId, onSelect, n
     <div className="meeting-grid">
       <section className="live-map-panel"><MeetingMap participants={session.participants} viewerId={session.viewerId} selectedId={selectedId} onSelect={onSelect} />
         <div className="map-top-label"><Users size={16} /> {session.participants.length} {session.participants.length === 1 ? 'person' : 'people'} in this meeting</div>
-        {!mapsReady && <div className="map-empty"><span><LocateFixed size={26} /></span><strong>A hello starts here.</strong><p>{location.status === 'error' ? 'Allow location access to put yourself on the map.' : location.status === 'paused' ? 'Resume sharing to appear on the map.' : 'Your map will center as soon as a location is available.'}</p></div>}
+        {!mapsReady && !mapHintDismissed && <div className="map-empty"><button type="button" className="icon-button map-empty-dismiss" aria-label="Dismiss map location message" onClick={() => {
+          setMapHintDismissed(true);
+          try { sessionStorage.setItem(`onmyway-map-hint-dismissed-${session.id}`, '1'); } catch { /* Dismissal still works when browser storage is unavailable. */ }
+        }}><X size={18} /></button><span><LocateFixed size={26} /></span><strong>A hello starts here.</strong><p>{location.status === 'error' ? 'Allow location access to put yourself on the map.' : location.status === 'paused' ? 'Resume sharing to appear on the map.' : 'Your map will center as soon as a location is available.'}</p></div>}
         {selected?.location && <div className="map-person-card"><div className="map-person-heading"><span className="avatar" style={{ background: COLORS[selected.color] }}>{INITIALS(selected.name)}</span><div><strong>{selected.name}</strong><span>{self?.location ? `${formatDistance(distanceBetween(self.location, selected.location))} away · straight line` : 'Location is available'}</span></div><button className="icon-button" aria-label="Close person details" onClick={() => onSelect(null)}><X size={18} /></button></div><Directions person={selected} /></div>}
         <div className="map-bottom-note"><Radio size={13} /> Updates every 4 seconds <span>·</span> Keep this page open</div>
       </section>
