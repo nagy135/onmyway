@@ -92,6 +92,7 @@ location / {
 
 - Meetings expire after 24 hours and support up to 12 participants.
 - The device’s position is sent about every four seconds, and server-sent events immediately distribute changes to meeting members. Stationary devices are periodically asked for a fresh fix.
+- Temporary GPS timeouts and unavailable signals trigger automatic retries, including a less demanding location request when necessary. Returning to the visible page restarts acquisition. Only actual permission denial stops sharing and asks you to allow access. Recent fixes stay visible during recovery until their original two-minute expiry; their timestamps are never extended.
 - Cookies restore your membership on refresh. They are HttpOnly, scoped to a meeting’s API path, and secure on HTTPS. The database stores hashes of member credentials.
 - An invite link allows someone to join; it does not expose participant names or positions until they join. Treat it as a private capability and only share it with people you trust.
 - Only the latest position is stored; there is no movement history. Pause clears that position, and leave deletes the participant. Pausing is remembered for the current browser tab across refreshes.

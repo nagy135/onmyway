@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { Position, SessionSnapshot } from '../shared/types';
+import type { SessionSnapshot } from '../shared/types';
 import { api, ApiError, errorMessage } from './lib';
+import { LocationTracker } from './location';
 
 export function useSession(id: string) {
   const [session, setSession] = useState<SessionSnapshot | null>(null);
@@ -47,11 +48,12 @@ export function useSession(id: string) {
 
 export function useLocation(id: string, viewerId: string | null, onSnapshot: (snapshot: SessionSnapshot) => void) {
   const [enabled, setEnabled] = useState(() => { try { return sessionStorage.getItem(`onmyway-paused-${id}`) !== '1'; } catch { return true; } });
-  const [status, setStatus] = useState<'locating' | 'active' | 'paused' | 'error'>(enabled ? 'locating' : 'paused');
+  const [status, setStatus] = useState<'locating' | 'active' | 'reconnecting' | 'paused' | 'error'>(enabled ? 'locating' : 'paused');
+  const [permissionDenied, setPermissionDenied] = useState(false);
+  const deniedRef = useRef(false);
   const [message, setMessage] = useState('');
   const [syncError, setSyncError] = useState('');
   const [attempt, setAttempt] = useState(0);
-  const latest = useRef<Position | null>(null);
   const running = useRef(false);
   const inFlight = useRef<Promise<void> | null>(null);
   const onSnapshotRef = useRef(onSnapshot);
@@ -77,53 +79,63 @@ export function useLocation(id: string, viewerId: string | null, onSnapshot: (sn
       setStatus('error'); setMessage('Location needs HTTPS (or localhost). Open this page using a secure connection.'); setEnabled(false); return;
     }
     let alive = true;
-    running.current = true; latest.current = null; setStatus('locating'); setMessage('');
+    running.current = true; setStatus('locating'); setMessage('');
     const publish = () => {
       if (!running.current || inFlight.current || pausePending.current) return;
-      const location = latest.current;
-      const fresh = location && Date.now() - location.timestamp < 115000;
-      void update(fresh ? { sharing: true, location } : { sharing: true, location: null });
+      const state = tracker.state;
+      void update({ sharing: state.status !== 'denied', location: state.location });
     };
-    const onPosition = (position: GeolocationPosition) => {
-      if (!alive || !running.current) return;
-      latest.current = {
-        latitude: position.coords.latitude, longitude: position.coords.longitude,
-        accuracy: position.coords.accuracy, timestamp: Math.min(position.timestamp, Date.now()),
-      };
-      setStatus('active'); setMessage(''); publish();
-    };
-    const onError = (error: GeolocationPositionError) => {
+    const tracker = new LocationTracker(navigator.geolocation, (state) => {
       if (!alive) return;
-      latest.current = null; setStatus('error'); setEnabled(false);
-      setMessage(error.code === 1 ? 'Location access is off. Allow location in your browser’s site settings, then try again.'
-        : error.code === 2 ? 'Your position is unavailable. Turn on your device’s location services, then try again.'
-          : 'Finding your location is taking a little longer. Try again outdoors or near a window.');
-      // Queue the removal after any in-flight position so it cannot restore an old coordinate.
-      const removal = (inFlight.current ?? Promise.resolve()).then(() => update({ sharing: false, location: null }));
-      pausePending.current = removal;
-      void removal.finally(() => { if (pausePending.current === removal) pausePending.current = null; });
+      setStatus(state.status === 'denied' ? 'error' : state.status);
+      setMessage(state.message);
+      if (state.status === 'denied') {
+        deniedRef.current = true; setPermissionDenied(true); setEnabled(false);
+        // Permission revocation clears the last position after an in-flight fix.
+        const removal = (inFlight.current ?? Promise.resolve()).then(() => update({ sharing: false, location: null }));
+        pausePending.current = removal;
+        void removal.finally(() => { if (pausePending.current === removal) pausePending.current = null; });
+      } else publish();
+    });
+    tracker.start();
+    const timer = setInterval(() => { tracker.tick(); publish(); }, 4000);
+    const wake = () => {
+      if (document.visibilityState === 'visible') { tracker.refresh(); publish(); }
     };
-    const geoOptions = { enableHighAccuracy: true, maximumAge: 0, timeout: 20000 };
-    const watch = navigator.geolocation.watchPosition(onPosition, onError, geoOptions);
-    let refreshing = false;
-    const timer = setInterval(() => {
-      publish();
-      // Some devices stop firing watchPosition while stationary. Ask for a fresh
-      // fix so an active, stationary person does not disappear after two minutes.
-      if (latest.current && Date.now() - latest.current.timestamp > 10000 && !refreshing) {
-        refreshing = true;
-        navigator.geolocation.getCurrentPosition((position) => { refreshing = false; onPosition(position); }, (error) => {
-          refreshing = false;
-          if (!latest.current || Date.now() - latest.current.timestamp > 10000) onError(error);
-        }, geoOptions);
-      }
-    }, 4000);
-    publish();
-    return () => { alive = false; running.current = false; clearInterval(timer); navigator.geolocation.clearWatch(watch); };
+    document.addEventListener('visibilitychange', wake);
+    window.addEventListener('pageshow', wake);
+    window.addEventListener('focus', wake);
+    window.addEventListener('online', wake);
+    return () => {
+      alive = false; running.current = false; clearInterval(timer); tracker.stop();
+      document.removeEventListener('visibilitychange', wake);
+      window.removeEventListener('pageshow', wake);
+      window.removeEventListener('focus', wake);
+      window.removeEventListener('online', wake);
+    };
   }, [id, viewerId, enabled, attempt, update]);
 
+  useEffect(() => {
+    if (!viewerId || !navigator.permissions) return;
+    let alive = true;
+    let permission: PermissionStatus | undefined;
+    const granted = () => {
+      if (!alive || permission?.state !== 'granted' || !deniedRef.current) return;
+      // A permission change must not resume a meeting the user explicitly paused.
+      try { if (sessionStorage.getItem(`onmyway-paused-${id}`) === '1') return; } catch { /* Storage is optional. */ }
+      deniedRef.current = false; setPermissionDenied(false); setEnabled(true); setAttempt((value) => value + 1);
+    };
+    navigator.permissions.query({ name: 'geolocation' }).then((value) => {
+      if (alive) {
+        permission = value;
+        permission.addEventListener('change', granted);
+      }
+    }).catch(() => { /* Some browsers do not expose geolocation permissions. */ });
+    return () => { alive = false; permission?.removeEventListener('change', granted); };
+  }, [id, viewerId]);
+
   async function pause() {
-    running.current = false; latest.current = null; setEnabled(false); setStatus('paused'); setMessage('');
+    running.current = false; deniedRef.current = false; setPermissionDenied(false); setEnabled(false); setStatus('paused'); setMessage('');
     try { sessionStorage.setItem(`onmyway-paused-${id}`, '1'); } catch { /* Storage is optional. */ }
     const removal = (inFlight.current ?? Promise.resolve()).then(() => update({ sharing: false, location: null }));
     pausePending.current = removal;
@@ -131,6 +143,6 @@ export function useLocation(id: string, viewerId: string | null, onSnapshot: (sn
     if (pausePending.current === removal) pausePending.current = null;
   }
 
-  function resume() { try { sessionStorage.removeItem(`onmyway-paused-${id}`); } catch { /* Storage is optional. */ } setEnabled(true); setAttempt((value) => value + 1); }
-  return { enabled, status, message, syncError, pause, resume };
+  function resume() { try { sessionStorage.removeItem(`onmyway-paused-${id}`); } catch { /* Storage is optional. */ } deniedRef.current = false; setPermissionDenied(false); setEnabled(true); setAttempt((value) => value + 1); }
+  return { enabled, status, permissionDenied, message, syncError, pause, resume };
 }
