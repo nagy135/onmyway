@@ -1,0 +1,23 @@
+services:
+  app:
+    build: .
+    init: true
+    ports:
+      - "${APP_BIND:-127.0.0.1}:${APP_PORT:-3001}:3001"
+    environment:
+      NODE_ENV: production
+      DATABASE_PATH: /app/data/onmyway.sqlite
+      PUBLIC_URL: ${PUBLIC_URL:-}
+      TRUST_PROXY: ${TRUST_PROXY:-0}
+      MAP_TILE_URL: ${MAP_TILE_URL:-https://tile.openstreetmap.org/{z}/{x}/{y}.png}
+      MAP_MAX_ZOOM: ${MAP_MAX_ZOOM:-19}
+      MAP_ATTRIBUTION: ${MAP_ATTRIBUTION:-&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a> contributors}
+    volumes:
+      - meeting-data:/app/data
+    restart: unless-stopped
+    stop_grace_period: 10s
+    security_opt:
+      - no-new-privileges:true
+
+volumes:
+  meeting-data:
