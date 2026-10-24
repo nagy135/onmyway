@@ -9,6 +9,7 @@ interface Props {
   viewerId?: string | null;
   selectedId?: string | null;
   onSelect?: (id: string) => void;
+  onLocationPick?: (latitude: number, longitude: number) => void;
   preview?: boolean;
 }
 
@@ -18,13 +19,14 @@ const DEFAULT_CONFIG: MapConfig = {
   maxZoom: 19,
 };
 
-export function MeetingMap({ participants, viewerId, selectedId, onSelect, preview = false }: Props) {
+export function MeetingMap({ participants, viewerId, selectedId, onSelect, onLocationPick, preview = false }: Props) {
   const element = useRef<HTMLDivElement>(null);
   const map = useRef<L.Map | null>(null);
   const markers = useRef(new Map<string, { marker: L.Marker; label: string }>());
   const line = useRef<L.Polyline | null>(null);
   const accuracy = useRef<L.Circle | null>(null);
   const selectionRef = useRef(onSelect); selectionRef.current = onSelect;
+  const locationPickRef = useRef(onLocationPick); locationPickRef.current = onLocationPick;
   const participantsRef = useRef(participants); participantsRef.current = participants;
   const fittedIds = useRef('');
   const [ready, setReady] = useState(false);
@@ -41,6 +43,10 @@ export function MeetingMap({ participants, viewerId, selectedId, onSelect, previ
     const instance = L.map(element.current!, { zoomControl: false, scrollWheelZoom: !preview }).setView([52.5207, 13.399], preview ? 15 : 12);
     instance.attributionControl.setPrefix(false);
     map.current = instance;
+    if (!preview) instance.on('click', (event: L.LeafletMouseEvent) => {
+      const point = event.latlng.wrap();
+      locationPickRef.current?.(point.lat, point.lng);
+    });
     api<MapConfig>('/config').catch(() => DEFAULT_CONFIG).then((config) => {
       if (!alive) return;
       const tiles = L.tileLayer(config.tileUrl, { attribution: config.attribution, maxZoom: config.maxZoom, crossOrigin: false });
@@ -106,7 +112,7 @@ export function MeetingMap({ participants, viewerId, selectedId, onSelect, previ
   }, [selectedId]);
 
   return <div className={`map-shell ${preview ? 'map-preview' : ''}`}>
-    <div ref={element} className="leaflet-map" aria-label={preview ? 'Example meeting map in Berlin' : 'Live map of meeting participants'} />
+    <div ref={element} className="leaflet-map" style={onLocationPick ? { cursor: 'crosshair' } : undefined} aria-label={preview ? 'Example meeting map in Berlin' : 'Live map of meeting participants'} />
     {tileError && <div className="map-error" role="status">Map tiles couldn’t load. <button onClick={() => { setTileError(false); setTileRetry((v) => v + 1); }}>Retry</button></div>}
     {!preview && <div className="map-controls">
       <button title="Show everyone" aria-label="Show everyone on the map" onClick={fit}><Maximize size={19} /></button>

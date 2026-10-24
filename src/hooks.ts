@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { SessionSnapshot } from '../shared/types';
+import type { Position, SessionSnapshot } from '../shared/types';
 import { api, ApiError, errorMessage } from './lib';
 import { LocationTracker } from './location';
 
@@ -46,7 +46,8 @@ export function useSession(id: string) {
   return { session, setSession, error, loading, connected, retry: () => setRetry((value) => value + 1) };
 }
 
-export function useLocation(id: string, viewerId: string | null, onSnapshot: (snapshot: SessionSnapshot) => void) {
+export function useLocation(id: string, viewerId: string | null, onSnapshot: (snapshot: SessionSnapshot) => void, debug = false) {
+  const [debugPosition, setDebugPosition] = useState<Pick<Position, 'latitude' | 'longitude'> | null>(null);
   const [enabled, setEnabled] = useState(() => { try { return sessionStorage.getItem(`onmyway-paused-${id}`) !== '1'; } catch { return true; } });
   const [status, setStatus] = useState<'locating' | 'active' | 'reconnecting' | 'paused' | 'error'>(enabled ? 'locating' : 'paused');
   const [permissionDenied, setPermissionDenied] = useState(false);
@@ -74,6 +75,18 @@ export function useLocation(id: string, viewerId: string | null, onSnapshot: (sn
     if (!enabled) {
       const timer = setInterval(() => { if (!inFlight.current && !pausePending.current) void update({ sharing: false }); }, 4000);
       return () => clearInterval(timer);
+    }
+    if (debug && debugPosition) {
+      let alive = true;
+      running.current = true; setStatus('active'); setMessage('Using a temporary debug location. Refresh to restore GPS.');
+      const publish = () => {
+        if (!alive || !running.current || inFlight.current || pausePending.current) return;
+        void update({ sharing: true, location: { ...debugPosition, accuracy: 0, timestamp: Date.now() } });
+      };
+      // Finish any previous GPS update or pause before publishing the override.
+      void Promise.all([inFlight.current, pausePending.current]).then(publish);
+      const timer = setInterval(publish, 4000);
+      return () => { alive = false; running.current = false; clearInterval(timer); };
     }
     if (!window.isSecureContext || !navigator.geolocation) {
       setStatus('error'); setMessage('Location needs HTTPS (or localhost). Open this page using a secure connection.'); setEnabled(false); return;
@@ -113,7 +126,7 @@ export function useLocation(id: string, viewerId: string | null, onSnapshot: (sn
       window.removeEventListener('focus', wake);
       window.removeEventListener('online', wake);
     };
-  }, [id, viewerId, enabled, attempt, update]);
+  }, [id, viewerId, enabled, attempt, update, debug, debugPosition]);
 
   useEffect(() => {
     if (!viewerId || !navigator.permissions) return;
@@ -144,5 +157,10 @@ export function useLocation(id: string, viewerId: string | null, onSnapshot: (sn
   }
 
   function resume() { try { sessionStorage.removeItem(`onmyway-paused-${id}`); } catch { /* Storage is optional. */ } deniedRef.current = false; setPermissionDenied(false); setEnabled(true); setAttempt((value) => value + 1); }
-  return { enabled, status, permissionDenied, message, syncError, pause, resume };
+  function moveTo(latitude: number, longitude: number) {
+    if (!debug) return;
+    setDebugPosition({ latitude, longitude });
+    resume();
+  }
+  return { enabled, status, permissionDenied, message, syncError, pause, resume, moveTo };
 }

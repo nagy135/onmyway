@@ -15,6 +15,8 @@ Open **http://localhost:5174**. Vite proxies `/api` to the Node server on port 3
 
 Your browser asks for location access when you enter a meeting. For a second participant, open the invite in another browser, a private window, or on another device. Tabs in the same browser share the same participant identity for a meeting.
 
+For temporary location testing, add `?debug=true` to the URL (for example, `/s/<meeting-id>?debug=true`). Click an empty spot on the meeting map to move your shared position there, even without GPS access. Further clicks move it again. The override stays in memory until refresh, which restores normal GPS tracking. Pause and resume sharing still work; clicking the map resumes sharing at the clicked position. Invite links do not include debug mode.
+
 ## Docker Compose
 
 ```sh

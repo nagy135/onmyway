@@ -144,7 +144,8 @@ function ActiveMeeting({ session, connected, onSnapshot, selectedId, onSelect, n
   session: SessionSnapshot; connected: boolean; onSnapshot: (snapshot: SessionSnapshot) => void;
   selectedId: string | null; onSelect: (id: string | null) => void; navigate: (path: string) => void; showToast: (message: string) => void;
 }) {
-  const location = useLocation(session.id, session.viewerId, onSnapshot);
+  const debug = new URLSearchParams(window.location.search).get('debug') === 'true';
+  const location = useLocation(session.id, session.viewerId, onSnapshot, debug);
   const [editName, setEditName] = useState(false);
   const [leaveDialog, setLeaveDialog] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -162,14 +163,14 @@ function ActiveMeeting({ session, connected, onSnapshot, selectedId, onSelect, n
   return <main className="meeting-main">
     <h1 className="sr-only">Meeting map</h1>
     <div className="meeting-grid">
-      <section className="live-map-panel"><MeetingMap participants={session.participants} viewerId={session.viewerId} selectedId={selectedId} onSelect={onSelect} />
+      <section className="live-map-panel"><MeetingMap participants={session.participants} viewerId={session.viewerId} selectedId={selectedId} onSelect={onSelect} onLocationPick={debug ? location.moveTo : undefined} />
         <div className={`map-top-label ${connected ? '' : 'connecting'}`}><span className="small-dot" /><span role="status">{connected ? 'Live' : 'Reconnecting…'}</span><span aria-hidden="true">·</span><Users size={16} /> {session.participants.length} {session.participants.length === 1 ? 'person' : 'people'}</div>
-        {!mapsReady && !mapHintDismissed && <div className="map-empty"><button type="button" className="icon-button map-empty-dismiss" aria-label="Dismiss map location message" onClick={() => {
+        {!debug && !mapsReady && !mapHintDismissed && <div className="map-empty"><button type="button" className="icon-button map-empty-dismiss" aria-label="Dismiss map location message" onClick={() => {
           setMapHintDismissed(true);
           try { sessionStorage.setItem(`onmyway-map-hint-dismissed-${session.id}`, '1'); } catch { /* Dismissal still works when browser storage is unavailable. */ }
         }}><X size={18} /></button><span><LocateFixed size={26} /></span><strong>{location.status === 'reconnecting' ? 'Finding your location again.' : 'A hello starts here.'}</strong><p>{location.permissionDenied ? 'Allow location access to put yourself on the map.' : location.status === 'paused' ? 'Resume sharing to appear on the map.' : location.status === 'reconnecting' ? 'Location updates were interrupted. We’re retrying automatically.' : location.status === 'error' ? location.message : 'Your map will center as soon as a location is available.'}</p></div>}
         {selected?.location && <div className="map-person-card"><div className="map-person-heading"><span className="avatar" style={{ background: COLORS[selected.color] }}>{INITIALS(selected.name)}</span><div><strong>{selected.name}</strong><span>{self?.location ? `${formatDistance(distanceBetween(self.location, selected.location))} away · straight line` : 'Location is available'}</span></div><button className="icon-button" aria-label="Close person details" onClick={() => onSelect(null)}><X size={18} /></button></div><Directions person={selected} /></div>}
-        <div className="map-bottom-note"><Radio size={13} /> Updates every 4 seconds <span>·</span> Keep this page open</div>
+        <div className="map-bottom-note"><Radio size={13} /> {debug ? <>Debug: click map to move <span>·</span> Resets on refresh</> : <>Updates every 4 seconds <span>·</span> Keep this page open</>}</div>
       </section>
       <aside className="meeting-sidebar">
         <ShareCard id={session.id} showToast={showToast} />
@@ -198,7 +199,11 @@ export function App() {
   const [toast, setToast] = useState('');
   useEffect(() => { const handler = () => setPath(window.location.pathname); window.addEventListener('popstate', handler); return () => window.removeEventListener('popstate', handler); }, []);
   useEffect(() => { if (toast) { const timeout = setTimeout(() => setToast(''), 4500); return () => clearTimeout(timeout); } }, [toast]);
-  function navigate(next: string) { window.history.pushState({}, '', next); setPath(next); window.scrollTo(0, 0); }
+  function navigate(next: string) {
+    const url = new URL(next, window.location.origin);
+    if (new URLSearchParams(window.location.search).get('debug') === 'true') url.searchParams.set('debug', 'true');
+    window.history.pushState({}, '', url); setPath(url.pathname); window.scrollTo(0, 0);
+  }
   const sessionMatch = path.match(/^\/s\/([a-f0-9]{32})\/?$/);
   return <div className="app"><header className={`header ${sessionMatch ? 'header-compact' : ''}`}><Brand onClick={() => navigate('/')} /><nav aria-label="Main navigation"><button onClick={() => setInfo('how')} aria-label="How it works" title="How it works">{sessionMatch ? <HelpCircle size={19} /> : 'How it works'}</button><button onClick={() => setInfo('privacy')} aria-label="Your privacy" title="Your privacy">{sessionMatch ? <ShieldCheck size={19} /> : 'Your privacy'}</button>{!sessionMatch && <span className="header-tag"><span className="small-dot" /> Made for meeting</span>}</nav></header>
     {path === '/' ? <Landing navigate={navigate} setInfo={setInfo} /> : sessionMatch ? <Meeting key={sessionMatch[1]} id={sessionMatch[1]} navigate={navigate} showToast={setToast} /> : <main className="center-state"><MapPin size={32} /><h1>This path leads somewhere else.</h1><p>Check your meeting link, or start a fresh meeting.</p><button className="button button-primary" onClick={() => navigate('/')}>Back home <ArrowRight size={18} /></button></main>}
