@@ -139,20 +139,14 @@ button { transition: background .18s, color .18s, box-shadow .18s, transform .18
 .join-card .name-form { text-align: left; }
 .join-expiry { display: block; margin-top: 21px; font-size: 10px; color: #a0aa95; }
 .text-button { display: inline-flex; gap: 5px; align-items: center; background: transparent; color: #849875; font-size: 11px; margin-top: 21px; }
-.meeting-main { padding: 33px 5.15% 25px; }
-.meeting-heading { display: flex; justify-content: space-between; align-items: center; margin-bottom: 27px; gap: 20px; }
-.back-link { display: flex; gap: 3px; align-items: center; background: transparent; padding: 0; font-size: 10px; color: #8d9a80; margin-bottom: 12px; }
-.meeting-heading h1 { font-size: 32px; font-weight: 550; letter-spacing: -1.4px; }
-.meeting-heading h1 > span { color: #82a357; }
-.meeting-heading p { color: #8c9781; font-size: 12px; margin-top: 7px; }
-.live-badge { display: inline-flex; align-items: center; white-space: nowrap; gap: 7px; padding: 9px 13px; background: #eef3e5; border: 1px solid #dfe7d4; border-radius: 100px; color: #728e58; font-size: 10px; }
-.live-badge .small-dot { box-shadow: 0 0 0 3px #82a35a14; }
-.live-badge.connecting { color: #a08c5e; background: #f4f0e7; }
-.live-badge.connecting .small-dot { background: #b1995c; }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
+.meeting-main { padding: 16px 24px 25px; }
 .meeting-grid { display: grid; grid-template-columns: minmax(0, 1fr) 307px; gap: 22px; align-items: stretch; }
-.live-map-panel { border-radius: 18px; border: 1px solid #dfe6d4; position: relative; overflow: hidden; min-height: 516px; isolation: isolate; }
+.live-map-panel { border-radius: 18px; border: 1px solid #dfe6d4; position: relative; overflow: hidden; min-height: clamp(516px, calc(100svh - 92px), 900px); isolation: isolate; }
 .live-map-panel .map-shell { position: absolute; inset: 0; }
 .map-top-label { position: absolute; top: 18px; left: 18px; background: #fffefaed; backdrop-filter: blur(8px); padding: 10px 12px; display: flex; align-items: center; gap: 7px; border: 1px solid #e3e8da; border-radius: 8px; font-size: 10px; color: #6c835b; z-index: 2; }
+.map-top-label.connecting { color: #907349; }
+.map-top-label.connecting .small-dot { background: #b1995c; }
 .map-bottom-note { position: absolute; bottom: 25px; left: 16px; z-index: 2; font-size: 9px; display: flex; gap: 5px; align-items: center; color: #71835e; background: #fffefaeb; border-radius: 5px; padding: 6px 8px; }
 .map-controls { position: absolute; right: 17px; top: 17px; display: flex; flex-direction: column; background: #fffefaed; border: 1px solid #e0e6d6; box-shadow: 0 3px 15px #3449290a; border-radius: 10px; padding: 4px; z-index: 2; }
 .map-controls button { width: 35px; height: 35px; display: grid; place-items: center; color: #6b835c; border-radius: 6px; background: transparent; }
@@ -240,7 +234,6 @@ button { transition: background .18s, color .18s, box-shadow .18s, transform .18
   .how-step { gap: 7px; }
   .how-step h3 { font-size: 10px; }
   .step-arrow { width: 14px; }
-  .meeting-main { padding-left: 4%; padding-right: 4%; }
   .meeting-grid { grid-template-columns: minmax(0, 1fr) 280px; gap: 17px; }
   .panel { padding: 18px; }
 }
@@ -264,13 +257,8 @@ button { transition: background .18s, color .18s, box-shadow .18s, transform .18
   .how-step p { font-size: 9px; }
   .step-arrow { display: none; }
   .footer { margin: 0 24px; }
-  .meeting-main { padding: 25px 24px; }
-  .meeting-heading { align-items: flex-start; margin-bottom: 22px; }
-  .meeting-heading h1 { font-size: 27px; }
-  .meeting-heading .live-badge { margin-top: 30px; }
-  .meeting-heading p { font-size: 11px; }
   .meeting-grid { grid-template-columns: 1fr; }
-  .live-map-panel { height: 490px; min-height: 0; }
+  .live-map-panel { height: clamp(430px, 72svh, 760px); min-height: 0; }
   .meeting-sidebar { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
   .people-panel { grid-column: 2; grid-row: 1; }
   .expiry-note { grid-column: 1 / -1; justify-content: center; margin-top: 0; }
@@ -316,18 +304,13 @@ button { transition: background .18s, color .18s, box-shadow .18s, transform .18
   .join-page { padding: 31px 20px; }
   .join-card { padding: 30px 23px; }
   .join-card h1 { font-size: 43px; }
-  .meeting-main { padding: 22px 16px; display: flex; flex-direction: column; }
-  .meeting-heading { order: 0; }
+  .meeting-main { padding: 12px 12px 22px; display: flex; flex-direction: column; }
   .meeting-grid { display: contents; }
   .live-map-panel { order: 1; }
   .location-bar { order: 2; }
   .meeting-sidebar { order: 3; margin-top: 18px; }
   .meeting-footnote { order: 4; }
-  .meeting-heading { flex-wrap: wrap; gap: 13px; }
-  .meeting-heading h1 { font-size: 26px; letter-spacing: -1.2px; }
-  .meeting-heading .live-badge { margin-top: 0; padding: 7px 10px; font-size: 9px; }
-  .meeting-heading p { font-size: 10px; }
-  .live-map-panel { height: 430px; border-radius: 13px; }
+  .live-map-panel { border-radius: 13px; }
   .map-top-label { left: 12px; top: 12px; font-size: 9px; padding: 9px; }
   .map-controls { top: 12px; right: 12px; }
   .map-controls button { width: 32px; height: 32px; }
@@ -353,4 +336,12 @@ button { transition: background .18s, color .18s, box-shadow .18s, transform .18
   .center-state h1 { font-size: 28px; }
   .toast { font-size: 11px; bottom: 17px; }
 }
+.header.header-compact { height: 56px; padding: 0 24px; }
+.header-compact .brand { gap: 8px; font-size: 22px; }
+.header-compact .brand-mark { width: 30px; height: 30px; border-radius: 9px; }
+.header-compact .brand-mark svg { width: 19px; height: 19px; }
+.header-compact nav { gap: 4px; }
+.header-compact nav > button { display: grid; place-items: center; width: 44px; height: 44px; padding: 0; border-radius: 8px; }
+.header-compact nav > button:hover { background: #eaf0e1; }
+@media (max-width: 480px) { .header.header-compact { padding: 0 12px; } }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition: none !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; } }

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
-import { ArrowRight, ArrowUpRight, Check, ChevronDown, ChevronLeft, Copy, Footprints, Heart, Link, LoaderCircle, LocateFixed, LogOut, MapPin, Navigation, Pause, Play, Radio, ShieldCheck, Sparkles, Users, X } from 'lucide-react';
+import { ArrowRight, ArrowUpRight, Check, ChevronDown, ChevronLeft, Copy, Footprints, Heart, HelpCircle, Link, LoaderCircle, LocateFixed, LogOut, MapPin, Navigation, Pause, Play, Radio, ShieldCheck, Sparkles, Users, X } from 'lucide-react';
 import type { Participant, SessionSnapshot } from '../shared/types';
 import { MeetingMap } from './Map';
 import { useLocation, useSession } from './hooks';
@@ -160,10 +160,10 @@ function ActiveMeeting({ session, connected, onSnapshot, selectedId, onSelect, n
   const expiresIn = Math.max(0, Math.ceil((session.expiresAt - Date.now()) / 3600000));
 
   return <main className="meeting-main">
-    <div className="meeting-heading"><div><button className="back-link" onClick={() => navigate('/')}><ChevronLeft size={14} /> Back home</button><h1>A little closer, together<span>.</span></h1><p>Your people, in real time. Let’s make that hello happen.</p></div><div className={`live-badge ${connected ? '' : 'connecting'}`}><span className="small-dot" /> {connected ? 'Live meeting' : 'Reconnecting…'}</div></div>
+    <h1 className="sr-only">Meeting map</h1>
     <div className="meeting-grid">
       <section className="live-map-panel"><MeetingMap participants={session.participants} viewerId={session.viewerId} selectedId={selectedId} onSelect={onSelect} />
-        <div className="map-top-label"><Users size={16} /> {session.participants.length} {session.participants.length === 1 ? 'person' : 'people'} in this meeting</div>
+        <div className={`map-top-label ${connected ? '' : 'connecting'}`}><span className="small-dot" /><span role="status">{connected ? 'Live' : 'Reconnecting…'}</span><span aria-hidden="true">·</span><Users size={16} /> {session.participants.length} {session.participants.length === 1 ? 'person' : 'people'}</div>
         {!mapsReady && !mapHintDismissed && <div className="map-empty"><button type="button" className="icon-button map-empty-dismiss" aria-label="Dismiss map location message" onClick={() => {
           setMapHintDismissed(true);
           try { sessionStorage.setItem(`onmyway-map-hint-dismissed-${session.id}`, '1'); } catch { /* Dismissal still works when browser storage is unavailable. */ }
@@ -200,7 +200,7 @@ export function App() {
   useEffect(() => { if (toast) { const timeout = setTimeout(() => setToast(''), 4500); return () => clearTimeout(timeout); } }, [toast]);
   function navigate(next: string) { window.history.pushState({}, '', next); setPath(next); window.scrollTo(0, 0); }
   const sessionMatch = path.match(/^\/s\/([a-f0-9]{32})\/?$/);
-  return <div className="app"><header className="header"><Brand onClick={() => navigate('/')} /><nav aria-label="Main navigation"><button onClick={() => setInfo('how')}>How it works</button><button onClick={() => setInfo('privacy')}>Your privacy</button><span className="header-tag"><span className="small-dot" /> Made for meeting</span></nav></header>
+  return <div className="app"><header className={`header ${sessionMatch ? 'header-compact' : ''}`}><Brand onClick={() => navigate('/')} /><nav aria-label="Main navigation"><button onClick={() => setInfo('how')} aria-label="How it works" title="How it works">{sessionMatch ? <HelpCircle size={19} /> : 'How it works'}</button><button onClick={() => setInfo('privacy')} aria-label="Your privacy" title="Your privacy">{sessionMatch ? <ShieldCheck size={19} /> : 'Your privacy'}</button>{!sessionMatch && <span className="header-tag"><span className="small-dot" /> Made for meeting</span>}</nav></header>
     {path === '/' ? <Landing navigate={navigate} setInfo={setInfo} /> : sessionMatch ? <Meeting key={sessionMatch[1]} id={sessionMatch[1]} navigate={navigate} showToast={setToast} /> : <main className="center-state"><MapPin size={32} /><h1>This path leads somewhere else.</h1><p>Check your meeting link, or start a fresh meeting.</p><button className="button button-primary" onClick={() => navigate('/')}>Back home <ArrowRight size={18} /></button></main>}
     {info && <InfoDialog panel={info} onClose={() => setInfo(null)} />}
     {toast && <div className="toast" role="status"><Check size={17} /> {toast}<button aria-label="Dismiss notification" onClick={() => setToast('')}><X size={16} /></button></div>}
