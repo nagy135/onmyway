@@ -171,9 +171,13 @@ button { transition: background .18s, color .18s, box-shadow .18s, transform .18
 .map-person-heading strong { display: block; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .map-person-heading > div > span { display: block; font-size: 10px; color: #8a9780; margin-top: 3px; }
 .directions-actions { margin-top: 12px; }
-.directions-actions .button { width: 100%; font-size: 11px; min-height: 39px; padding: 10px 12px; }
-.apple-link { font-size: 9px; color: #8a9c78; display: flex; align-items: center; justify-content: center; gap: 5px; margin-top: 11px; text-decoration: none; }
-.apple-link:hover { text-decoration: underline; }
+.directions-label { display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 550; color: #52664a; margin-bottom: 9px; }
+.directions-providers { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; }
+.map-provider-button { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 7px; min-height: 83px; padding: 11px 8px; border: 1px solid #d9e2cd; border-radius: 9px; background: #fffefa; color: var(--ink); font-size: 11px; font-weight: 600; text-decoration: none; transition: background .18s, border-color .18s; }
+.map-provider-button:hover { background: #eef4e5; border-color: #8aa56e; }
+.map-provider-button:focus-visible { outline-offset: 2px; }
+.map-provider-button img { display: block; }
+.map-provider-external { position: absolute; top: 7px; right: 7px; color: #647b54; }
 .meeting-sidebar { display: flex; flex-direction: column; gap: 18px; }
 .panel { background: #fffefa; border: 1px solid #e0e6d6; border-radius: 15px; padding: 21px; }
 .panel-icon { color: #77975a; background: #eef4e5; border-radius: 9px; display: inline-flex; padding: 9px; margin-bottom: 12px; }

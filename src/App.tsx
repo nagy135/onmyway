@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
-import { ArrowRight, ArrowUpRight, Check, ChevronDown, ChevronLeft, Copy, ExternalLink, Footprints, Heart, Link, LoaderCircle, LocateFixed, LogOut, MapPin, Navigation, Pause, Play, Radio, ShieldCheck, Sparkles, Users, X } from 'lucide-react';
+import { ArrowRight, ArrowUpRight, Check, ChevronDown, ChevronLeft, Copy, Footprints, Heart, Link, LoaderCircle, LocateFixed, LogOut, MapPin, Navigation, Pause, Play, Radio, ShieldCheck, Sparkles, Users, X } from 'lucide-react';
 import type { Participant, SessionSnapshot } from '../shared/types';
 import { MeetingMap } from './Map';
 import { useLocation, useSession } from './hooks';
@@ -115,7 +115,19 @@ function ShareCard({ id, showToast }: { id: string; showToast: (message: string)
 
 function Directions({ person }: { person: Participant }) {
   if (!person.location) return null;
-  return <div className="directions-actions"><a className="button button-primary" href={directionsUrl(person.location)} target="_blank" rel="noopener noreferrer">Walk to {person.name}<ArrowUpRight size={18} /></a><a className="apple-link" href={directionsUrl(person.location, 'apple')} target="_blank" rel="noopener noreferrer">Open in Apple Maps <ExternalLink size={13} /></a></div>;
+  return <div className="directions-actions">
+    <p className="directions-label"><Footprints size={15} aria-hidden="true" /> Walking directions</p>
+    <div className="directions-providers">
+      {(['google', 'apple'] as const).map((provider) => {
+        const name = provider === 'google' ? 'Google Maps' : 'Apple Maps';
+        return <a key={provider} className="map-provider-button" href={directionsUrl(person.location!, provider)} target="_blank" rel="noopener noreferrer" aria-label={`Walking directions to ${person.name} in ${name} (opens in a new tab)`} title={`Open walking directions in ${name}`}>
+          <img src={`/maps/${provider}.svg`} width="32" height="32" alt="" />
+          <span>{name}</span>
+          <ArrowUpRight className="map-provider-external" size={13} aria-hidden="true" />
+        </a>;
+      })}
+    </div>
+  </div>;
 }
 
 function Meeting({ id, navigate, showToast }: { id: string; navigate: (path: string) => void; showToast: (message: string) => void }) {
