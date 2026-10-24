@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'rea
 import { ArrowRight, ArrowUpRight, Check, ChevronDown, ChevronLeft, Copy, Footprints, Heart, HelpCircle, Link, LoaderCircle, LocateFixed, LogOut, MapPin, Navigation, Pause, Play, Radio, ShieldCheck, Sparkles, Users, X } from 'lucide-react';
 import type { Participant, SessionSnapshot } from '../shared/types';
 import { MeetingMap } from './Map';
+import { ThemePicker } from './ThemePicker';
 import { useLocation, useSession } from './hooks';
 import { api, COLORS, directionsUrl, distanceBetween, errorMessage, formatDistance, INITIALS } from './lib';
 
@@ -205,7 +206,7 @@ export function App() {
     window.history.pushState({}, '', url); setPath(url.pathname); window.scrollTo(0, 0);
   }
   const sessionMatch = path.match(/^\/s\/([a-f0-9]{32})\/?$/);
-  return <div className="app"><header className={`header ${sessionMatch ? 'header-compact' : ''}`}><Brand onClick={() => navigate('/')} /><nav aria-label="Main navigation"><button onClick={() => setInfo('how')} aria-label="How it works" title="How it works">{sessionMatch ? <HelpCircle size={19} /> : 'How it works'}</button><button onClick={() => setInfo('privacy')} aria-label="Your privacy" title="Your privacy">{sessionMatch ? <ShieldCheck size={19} /> : 'Your privacy'}</button>{!sessionMatch && <span className="header-tag"><span className="small-dot" /> Made for meeting</span>}</nav></header>
+  return <div className="app"><header className={`header ${sessionMatch ? 'header-compact' : ''}`}><Brand onClick={() => navigate('/')} /><nav aria-label="Main navigation"><button onClick={() => setInfo('how')} aria-label="How it works" title="How it works"><HelpCircle className={sessionMatch ? undefined : "nav-icon"} size={19} />{!sessionMatch && <span className="nav-label">How it works</span>}</button><button onClick={() => setInfo('privacy')} aria-label="Your privacy" title="Your privacy"><ShieldCheck className={sessionMatch ? undefined : "nav-icon"} size={19} />{!sessionMatch && <span className="nav-label">Your privacy</span>}</button>{!sessionMatch && <span className="header-tag"><span className="small-dot" /> Made for meeting</span>}<ThemePicker /></nav></header>
     {path === '/' ? <Landing navigate={navigate} setInfo={setInfo} /> : sessionMatch ? <Meeting key={sessionMatch[1]} id={sessionMatch[1]} navigate={navigate} showToast={setToast} /> : <main className="center-state"><MapPin size={32} /><h1>This path leads somewhere else.</h1><p>Check your meeting link, or start a fresh meeting.</p><button className="button button-primary" onClick={() => navigate('/')}>Back home <ArrowRight size={18} /></button></main>}
     {info && <InfoDialog panel={info} onClose={() => setInfo(null)} />}
     {toast && <div className="toast" role="status"><Check size={17} /> {toast}<button aria-label="Dismiss notification" onClick={() => setToast('')}><X size={16} /></button></div>}
